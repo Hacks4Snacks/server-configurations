@@ -1,5 +1,5 @@
 # Bash Setup Scripts For Common Server Operating Systems
-[![CodeFactor](https://www.codefactor.io/repository/github/hacks4snacks/server-configurations/badge)](https://www.codefactor.io/repository/github/hacks4snacks/server-configurations) ![GitHub](https://img.shields.io/github/license/hacks4snacks/server-configurations)
+[![CodeFactor](https://www.codefactor.io/repository/github/hacks4snacks/server-configurations/badge)](https://www.codefactor.io/repository/github/hacks4snacks/server-configurations) ![GitHub last commit](https://img.shields.io/github/last-commit/hacks4snacks/server-configurations) ![GitHub](https://img.shields.io/github/license/hacks4snacks/server-configurations)
 
 The purpose of this repository is to provide scripts to help automate basic provisioning tasks on common server operating systems.
 
