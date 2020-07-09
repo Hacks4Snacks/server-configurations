@@ -26,7 +26,7 @@ fi
 
 # OS verification
 
-if { [ "${NAME}" != "CentOS" ] && [ "$NAME" != "Red"* ]; }; then
+if { [[ "${NAME}" != "CentOS" ]] && [[ "$NAME" != "Red"* ]]; }; then
 	echo "Only CentOS and RedHat is supported."
     	exit 1
 fi
