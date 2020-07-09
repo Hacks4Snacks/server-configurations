@@ -209,10 +209,10 @@ configure_fail2ban() {
 
 # Configure Auditd
 configure_auditd() {
-    ${sudo} wget -q -O /tmp/audit.rules ${AUDIT_RULE_URL}
-    ${sudo} cp /tmp/audit.rules /etc/audit/rules.d/
-    ${sudo} sed -i 's/active = no/active = yes/' /etc/audisp/plugins.d/syslog.conf
-    ${sudo} sed -i 's/args = LOG_INFO/args = LOG_LOCAL6/' /etc/audisp/plugins.d/syslog.conf
+    $sudo wget -q -O /tmp/audit.rules ${AUDIT_RULE_URL}
+    $sudo cp /tmp/audit.rules /etc/audit/rules.d/
+    $sudo sed -i 's/active = no/active = yes/' /etc/audisp/plugins.d/syslog.conf
+    $sudo sed -i 's/args = LOG_INFO/args = LOG_LOCAL6/' /etc/audisp/plugins.d/syslog.conf
 }
 
 # Call auditd configuration and enable auditd
