@@ -1,4 +1,4 @@
-# Bash setup scripts for common Server Operating Systems
+# Bash Setup Scripts For Common Server Operating Systems
 The purpose of this repository is to provide scripts to help automate basic provisioning tasks on common server operating systems.
 
 ## Advisory
