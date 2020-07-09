@@ -1,2 +1,2 @@
-# ubuntu-server-configuration
-Ubuntu Server Configuration Script
+# CentOS Server Configuration
+CentOS Server Configuration Script
