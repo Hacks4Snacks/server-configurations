@@ -1,2 +1,2 @@
-# ubuntu-server-configuration
+# Ubuntu Server Configuration
 Ubuntu Server Configuration Script
