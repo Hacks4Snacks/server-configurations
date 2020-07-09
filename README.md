@@ -33,13 +33,13 @@ Please submit all improvements, contributions, and fixes as a GitHub issue or a 
 
 ## To-Do
 
-- [ ] Add configuration for rsyslog forwarding
+- [X] Add configuration for rsyslog forwarding
 - [ ] Add create user option
 - [ ] Add create group option
 - [ ] Add CIS templates
 - [ ] Provide tests
 - [ ] Add Multiple custom network setup options
-- [ ] Complete template for CentOS
+- [X] Complete template for CentOS
 - [ ] Complete template for SUSE
 
 ## Additional Information and Guidance
