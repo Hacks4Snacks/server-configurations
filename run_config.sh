@@ -8,7 +8,8 @@ sudo="sudo"
 #release=$(lsb_release -sc)
 #custom_packages=""
 output_file="output.log"
-packages="auditd audispd-plugins rsyslog openssh-server whois htop hping3 net-tools curl nmap ndiff vim git ntp tshark apt-transport-https ca-certificates software-properties-common fail2ban"
+packages="auditd audispd-plugins rsyslog openssh-server whois git htop hping3 net-tools curl nmap ndiff vim git ntp tshark apt-transport-https ca-certificates software-properties-common fail2ban"
+AUDIT_RULE_URL="https://raw.githubusercontent.com/Hacks4Snacks/linux-auditd/master/audit.rules"
 
 declare -a packages
 
@@ -25,31 +26,18 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# TODO Check OS
-#if [ -r /etc/os-release ]; then
-#	next
-#elif [ -f /etc/os-release ]; then
-#	NAME=$(sed -rn 's/(\w+).*/\1/p')
-#	VERSION_ID=$(grep -o '[0-9]\.[0-9]')
-#	if [[ "${NAME}" == "Ubuntu"  ]]; then
-#		UBUNTU=true
-#	        if [[ "${VERSION_ID}" == "20.04" ]]; then
- #       	    UBUNTU_20=true
-#	        elif [[ "${VERSION_ID}" == "18.04" ]]; then
-#		        UBUNTU_18=true
-#   	else
-#	    	echo "Unsupported Ubuntu Version"
-#	    	echo "${NAME}"
-#	    	echo "${VERSION_ID}"
-#	    	exit 1
-#	    	fi
-#else
-#	echo "Unsupported Ubuntu Version"
-#	echo "${NAME}"
-#	echo "${VERSION_ID}"
-#	exit 1
-#	fi
-#fi
+# OS verification
+if [[ -f /etc/os-release ]]; then
+    source /etc/os-release
+else
+    echo "Can not identify OS"
+    exit 1
+fi
+
+if [[ "${NAME}" != "Ubuntu"  ]]; then
+    echo "Only Ubuntu is supported at this time."
+    exit 1
+fi
 
 #### START OF FUNCTIONS ####
 
@@ -107,11 +95,57 @@ change_ssh_config() {
     $sudo sed -re 's/^(\#?)(PermitRootLogin)([[:space:]]+)(.*)/PermitRootLogin no/' -i /etc/ssh/sshd_config
 }
 
+# Harden network options with sysctl
+sysctl_harden() {
+	# IP Spoofing protection
+	echo "net.ipv4.conf.all.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.conf.default.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
+        # Disable source packet routing
+	echo "net.ipv4.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv6.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv6.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+	# Ignore send redirects
+	echo "net.ipv4.conf.all.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.conf.default.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+	# Block SYN attacks
+	echo "net.ipv4.tcp_syncookies = 1" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.tcp_max_syn_backlog = 2048" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.tcp_synack_retries = 2" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.tcp_syn_retries = 5" | $sudo tee -a /etc/sysctl.conf
+	# Log Martians
+	echo "net.ipv4.conf.all.log_martians = 1" | $sudo tee -a /etc/sysctl.conf
+	echo "net.ipv4.icmp_ignore_bogus_error_responses = 1" | $sudo tee -a /etc/sysctl.conf
+	# Ignore ICMP redirects
+#	echo "net.ipv4.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+#	echo "net.ipv6.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+#	echo "net.ipv4.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+#	echo "net.ipv6.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+
+	# Ignore Directed pings
+#	echo "net.ipv4.icmp_echo_ignore_all = 1" | $sudo tee -a /etc/sysctl.conf
+	$sudo sysctl -p
+}
+
 # Setup the Uncomplicated Firewall
 setup_ufw() {
     $sudo ufw allow OpenSSH
     yes y | sudo ufw enable
 }
+
+# Remove snapd artifacts from the host
+snapd_remove() {
+	for i in $(snap list | grep -vE 'Name' | awk '{print $1}'); do $sudo snap remove "$i"; done
+	$sudo systemctl stop snapd
+	$sudo umount -lf /snap/core/*
+	$sudo snap remove core
+	$sudo snap remove snapd
+	$sudo apt purge snapd
+	rm -rf ~/snap
+	$sudo rm -vrf /snap /var/snap /var/lib/snapd /var/cache/snapd
+	$sudo apt-mark hold snapd
+}
+
 
 # Mount swap file
 mount_swap() {
@@ -177,22 +211,36 @@ configure_fail2ban() {
 	$sudo systemctl start fail2ban
 }
 
-# Enable Auditd
+
+# Configure Auditd
 configure_auditd() {
-        $sudo systemctl enable auditd
+	${sudo} wget -q -O /tmp/audit.rules ${AUDIT_RULE_URL}
+    	${sudo} cp /tmp/audit.rules /etc/audit/rules.d/
+    	${sudo} sed -i 's/active = no/active = yes/' /etc/audisp/plugins.d/syslog.conf
+    	${sudo} sed -i 's/args = LOG_INFO/args = LOG_LOCAL6/' /etc/audisp/plugins.d/syslog.conf
+}
+
+# Enable Auditd
+enable_auditd() {
+        configure_auditd
+	$sudo systemctl enable auditd
         $sudo systemctl start auditd
 }
 
-# TODO disable SUDO password prompt for user/group
-# Disables the sudo password prompt for a user account by editing /etc/sudoers
-# Arguments:
-#   Account username
-#disable_sudo_password() {
-#    local username="${1}"
-
-#    $sudo cp /etc/sudoers /etc/sudoers.bak
-#    $sudo bash -c "echo '${1} ALL=(ALL) NOPASSWD: ALL' | (EDITOR='tee -a' visudo)"
+# TODO include the option to configure syslog forwarding
+#configure_rsyslog() {
 #}
+
+# TODO include rsyslog enablement
+#enable_rsyslog() {
+#}
+
+# Disables the sudo password prompt for sudo user group
+disable_sudo_password() {
+
+    $sudo cp /etc/sudoers /etc/sudoers.bak
+    $sudo bash -c "echo '%sudo ALL=(ALL) NOPASSWD: ALL' | (EDITOR='tee -a' visudo)"
+}
 
 
 #### START OF CALLS TO FUNCTION ####
@@ -207,7 +255,7 @@ main() {
     # Run configuration functions
     trap EXIT SIGHUP SIGINT SIGTERM
 
-#    addUserAccount "${username}" "${password}"
+#    add_user_account "${username}" "${password}"
     echo "Password SSH Authentication will be disabled"
 #    read -rp $'Paste in the public SSH key for current user:\n' ssh_key
     output_log "${output_file}"
@@ -215,13 +263,14 @@ main() {
     echo "Script is running."
     install_packages
     exec 3>&1 >>"${output_file}" 2>&1
-#    disable_sudo_password "${username}"
+    disable_sudo_password
 #    add_ssh_key "${username}" "${ssh_key}"
     configure_fail2ban
-    configure_auditd
+    enable_auditd
     change_ssh_config
     setup_ufw
-
+    sysctl_harden
+    snapd_remove
 
     if ! has_swap; then
         setup_swap
