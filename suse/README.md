@@ -1,2 +1,2 @@
-# ubuntu-server-configuration
-Ubuntu Server Configuration Script
+# SUSE Server Configuration
+SUSE Server Configuration Script
