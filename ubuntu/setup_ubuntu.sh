@@ -5,8 +5,6 @@
 ##### Global Variables #####
 
 sudo="sudo"
-#release=$(lsb_release -sc)
-#custom_packages=""
 output_file="output.log"
 packages="auditd audispd-plugins rsyslog openssh-server whois git htop hping3 net-tools curl nmap ndiff vim git ntp tshark apt-transport-https ca-certificates software-properties-common fail2ban"
 AUDIT_RULE_URL="https://raw.githubusercontent.com/Hacks4Snacks/linux-auditd/master/audit.rules"
@@ -14,7 +12,7 @@ AUDIT_RULE_URL="https://raw.githubusercontent.com/Hacks4Snacks/linux-auditd/mast
 declare -a packages
 
 print_banner() {
-cat <<EOF
+    cat <<EOF
 ┌─────────────────────────────────────────────────────────┐
 │             Ubuntu Server Configuration 0.1             │
 └─────────────────────────────────────────────────────────┘
@@ -22,8 +20,8 @@ EOF
 }
 
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root"
-   exit 1
+    echo "This script must be run as root"
+    exit 1
 fi
 
 # OS verification
@@ -34,7 +32,7 @@ else
     exit 1
 fi
 
-if [[ "${NAME}" != "Ubuntu"  ]]; then
+if [[ "${NAME}" != "Ubuntu" ]]; then
     echo "Only Ubuntu is supported at this time."
     exit 1
 fi
@@ -66,26 +64,25 @@ output_log() {
 
 # Create the swap file based on amount of physical memory on machine (Maximum size of swap is 4GB)
 create_swap() {
-   local swapmem=$(($(getPhysicalMemory) * 2))
+    local swapmem=$(($(getPhysicalMemory) * 2))
 
-   # Anything over 4GB in swap is probably unnecessary as a RAM fallback
-   if [ ${swapmem} -gt 4 ]; then
+    # Anything over 4GB in swap is probably unnecessary as a RAM fallback
+    if [ ${swapmem} -gt 4 ]; then
         swapmem=4
-   fi
+    fi
 
-   $sudo fallocate -l "${swapmem}G" /swapfile
-   $sudo chmod 600 /swapfile
-   $sudo mkswap /swapfile
-   $sudo swapon /swapfile
+    $sudo fallocate -l "${swapmem}G" /swapfile
+    $sudo chmod 600 /swapfile
+    $sudo mkswap /swapfile
+    $sudo swapon /swapfile
 }
 
 # Check for additional updates and install packages
-install_packages(){
-   $sudo apt update
-   $sudo apt upgrade -y
-   $sudo apt install -y ${packages["${release}"]}
-#   $sudo apt install -y $custom_packages
-   return 0
+install_packages() {
+    $sudo apt update
+    $sudo apt upgrade -y
+    $sudo apt install -y ${packages["${release}"]}
+    return 0
 }
 
 # Modify the sshd_config file
@@ -97,34 +94,34 @@ change_ssh_config() {
 
 # Harden network options with sysctl
 sysctl_harden() {
-	# IP Spoofing protection
-	echo "net.ipv4.conf.all.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.conf.default.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
-        # Disable source packet routing
-	echo "net.ipv4.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv6.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv6.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
-	# Ignore send redirects
-	echo "net.ipv4.conf.all.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.conf.default.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
-	# Block SYN attacks
-	echo "net.ipv4.tcp_syncookies = 1" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.tcp_max_syn_backlog = 2048" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.tcp_synack_retries = 2" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.tcp_syn_retries = 5" | $sudo tee -a /etc/sysctl.conf
-	# Log Martians
-	echo "net.ipv4.conf.all.log_martians = 1" | $sudo tee -a /etc/sysctl.conf
-	echo "net.ipv4.icmp_ignore_bogus_error_responses = 1" | $sudo tee -a /etc/sysctl.conf
-	# Ignore ICMP redirects
-#	echo "net.ipv4.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
-#	echo "net.ipv6.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
-#	echo "net.ipv4.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
-#	echo "net.ipv6.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    # IP Spoofing protection
+    echo "net.ipv4.conf.all.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.conf.default.rp_filter = 1" | $sudo tee -a /etc/sysctl.conf
+    # Disable source packet routing
+    echo "net.ipv4.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv6.conf.all.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv6.conf.default.accept_source_route = 0" | $sudo tee -a /etc/sysctl.conf
+    # Ignore send redirects
+    echo "net.ipv4.conf.all.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.conf.default.send_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    # Block SYN attacks
+    echo "net.ipv4.tcp_syncookies = 1" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.tcp_max_syn_backlog = 2048" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.tcp_synack_retries = 2" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.tcp_syn_retries = 5" | $sudo tee -a /etc/sysctl.conf
+    # Log Martians
+    echo "net.ipv4.conf.all.log_martians = 1" | $sudo tee -a /etc/sysctl.conf
+    echo "net.ipv4.icmp_ignore_bogus_error_responses = 1" | $sudo tee -a /etc/sysctl.conf
+    # Ignore ICMP redirects
+    #	echo "net.ipv4.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    #	echo "net.ipv6.conf.all.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    #	echo "net.ipv4.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
+    #	echo "net.ipv6.conf.default.accept_redirects = 0" | $sudo tee -a /etc/sysctl.conf
 
-	# Ignore Directed pings
-#	echo "net.ipv4.icmp_echo_ignore_all = 1" | $sudo tee -a /etc/sysctl.conf
-	$sudo sysctl -p
+    # Ignore Directed pings
+    #	echo "net.ipv4.icmp_echo_ignore_all = 1" | $sudo tee -a /etc/sysctl.conf
+    $sudo sysctl -p
 }
 
 # Setup the Uncomplicated Firewall
@@ -135,17 +132,16 @@ setup_ufw() {
 
 # Remove snapd artifacts from the host
 snapd_remove() {
-	for i in $(snap list | grep -vE 'Name' | awk '{print $1}'); do $sudo snap remove "$i"; done
-	$sudo systemctl stop snapd
-	$sudo umount -lf /snap/core/*
-	$sudo snap remove core
-	$sudo snap remove snapd
-	$sudo apt purge snapd
-	rm -rf ~/snap
-	$sudo rm -vrf /snap /var/snap /var/lib/snapd /var/cache/snapd
-	$sudo apt-mark hold snapd
+    for i in $(snap list | grep -vE 'Name' | awk '{print $1}'); do $sudo snap remove "$i"; done
+    $sudo systemctl stop snapd
+    $sudo umount -lf /snap/core/*
+    $sudo snap remove core
+    $sudo snap remove snapd
+    $sudo apt purge snapd
+    rm -rf ~/snap
+    $sudo rm -vrf /snap /var/snap /var/lib/snapd /var/cache/snapd
+    $sudo apt-mark hold snapd
 }
-
 
 # Mount swap file
 mount_swap() {
@@ -189,14 +185,14 @@ set_timezone() {
 
 # Configure Network Time Protocol
 configure_ntp() {
-
+    # Assumes Ubuntu 20.04
     $sudo systemctl restart systemd-timesyncd
 }
 
 # Gets the amount of physical memory in GB (rounded up) installed on the machine
 get_physical_memory() {
     local phymem
-        phymem="$(free -g|awk '/^Mem:/{print $2}')"
+    phymem="$(free -g | awk '/^Mem:/{print $2}')"
 
     if [[ ${phymem} == '0' ]]; then
         echo 1
@@ -207,33 +203,42 @@ get_physical_memory() {
 
 # Enable fail2basn
 configure_fail2ban() {
-	$sudo systemctl enable fail2ban
-	$sudo systemctl start fail2ban
+    $sudo systemctl enable fail2ban
+    $sudo systemctl start fail2ban
 }
-
 
 # Configure Auditd
 configure_auditd() {
-	${sudo} wget -q -O /tmp/audit.rules ${AUDIT_RULE_URL}
-    	${sudo} cp /tmp/audit.rules /etc/audit/rules.d/
-    	${sudo} sed -i 's/active = no/active = yes/' /etc/audisp/plugins.d/syslog.conf
-    	${sudo} sed -i 's/args = LOG_INFO/args = LOG_LOCAL6/' /etc/audisp/plugins.d/syslog.conf
+    ${sudo} wget -q -O /tmp/audit.rules ${AUDIT_RULE_URL}
+    ${sudo} cp /tmp/audit.rules /etc/audit/rules.d/
+    ${sudo} sed -i 's/active = no/active = yes/' /etc/audisp/plugins.d/syslog.conf
+    ${sudo} sed -i 's/args = LOG_INFO/args = LOG_LOCAL6/' /etc/audisp/plugins.d/syslog.conf
 }
 
-# Enable Auditd
+# Call auditd configuration and enable auditd
 enable_auditd() {
-        configure_auditd
-	$sudo systemctl enable auditd
-        $sudo systemctl start auditd
+    configure_auditd
+    $sudo systemctl enable auditd
+    $sudo systemctl start auditd
 }
 
-# TODO include the option to configure syslog forwarding
-#configure_rsyslog() {
-#}
+configure_rsyslog() {
+    echo -n "Forward logs to a syslog server (y/n)?: "
+    read -r syslog_forward
+    if [ "$syslog_forward" = "${syslog_forward#[Yy]}" ]; then
+        read -rp "Please enter syslog server IP (Assumes port 514/UDP ): " syslog_ip
+        ${sudo} echo "*.*   @${syslog_ip}:514" | sudo tee -a /etc/rsyslog.d/50-default.conf >/dev/null
+    else
+        :
+    fi
+}
 
-# TODO include rsyslog enablement
-#enable_rsyslog() {
-#}
+# Call rsyslog configuration function and enable rsyslog
+enable_rsyslog() {
+    configure_rsyslog
+    $sudo systemctl enable rsyslog
+    $sudo systemctl start rsyslog
+}
 
 # Disables the sudo password prompt for sudo user group
 disable_sudo_password() {
@@ -242,31 +247,30 @@ disable_sudo_password() {
     $sudo bash -c "echo '%sudo ALL=(ALL) NOPASSWD: ALL' | (EDITOR='tee -a' visudo)"
 }
 
-
 #### START OF CALLS TO FUNCTION ####
 
 # Create main function
 main() {
-
     print_banner
-	#    read -rp "Enter the username of the new user account:" username
+    #    read -rp "Enter the username of the new user account:" username
     echo "This script is still in development, please ensure you have SSH keys copied to the target server prior to running."
-#    prompt_password
+    #    prompt_password
     # Run configuration functions
     trap EXIT SIGHUP SIGINT SIGTERM
 
-#    add_user_account "${username}" "${password}"
+    #    add_user_account "${username}" "${password}"
     echo "Password SSH Authentication will be disabled"
-#    read -rp $'Paste in the public SSH key for current user:\n' ssh_key
+    #    read -rp $'Paste in the public SSH key for current user:\n' ssh_key
     output_log "${output_file}"
 
     echo "Script is running."
     install_packages
     exec 3>&1 >>"${output_file}" 2>&1
     disable_sudo_password
-#    add_ssh_key "${username}" "${ssh_key}"
+    #    add_ssh_key "${username}" "${ssh_key}"
     configure_fail2ban
     enable_auditd
+    enable_rsyslog
     change_ssh_config
     setup_ufw
     sysctl_harden
@@ -294,7 +298,6 @@ setup_swap() {
 has_swap() {
     [[ "$(sudo swapon -s)" == *"/swapfile"* ]]
 }
-
 
 setup_timezone() {
     echo -ne "Enter the timezone for the server (Default is 'UTC'):\n" >&3
