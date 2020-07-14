@@ -6,7 +6,7 @@
 
 sudo="sudo"
 output_file="output.log"
-packages="auditd audispd-plugins rsyslog openssh-server whois git htop hping3 net-tools curl nmap ndiff vim git ntp tshark apt-transport-https ca-certificates software-properties-common fail2ban"
+packages="auditd audispd-plugins rsyslog openssh-server whois git htop hping3 net-tools curl nmap ndiff vim git ntp tshark apt-transport-https ca-certificates software-properties-common fail2ban jq"
 AUDIT_RULE_URL="https://raw.githubusercontent.com/Hacks4Snacks/linux-auditd/master/audit.rules"
 
 declare -a packages
