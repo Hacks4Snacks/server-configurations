@@ -42,7 +42,7 @@ Please submit all improvements, contributions, and fixes as a GitHub issue or a 
 - [ ] Provide tests
 - [ ] Add Multiple custom network setup options
 - [X] Complete template for CentOS
-- [ ] Complete template for SUSE
+- [ ] Complete template for CBL-Mariner
 
 ## Additional Information and Guidance
 
